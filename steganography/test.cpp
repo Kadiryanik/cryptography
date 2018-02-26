@@ -10,8 +10,11 @@
 using namespace std;
 
 #define FILE_PATH_BINARY "images/binary.bmp"
+#define FILE_PATH_GRAY "images/gray.bmp"
 #define FILE_PATH_MERGED "images/merged.bmp"
 #define FILE_PATH_SECRET "images/secret.bmp"
+#define FILE_PATH_VC_FIRST "images/1.bmp"
+#define FILE_PATH_VC_SECOND "images/2.bmp"
 
 void usage(const char *);
 
@@ -25,12 +28,13 @@ int main(int argc, char *argv[]){
   const char* mergedImage = NULL;
   const char* toBinaryImage = NULL;
   const char* visualImage = NULL;
+  const char* toGrayImage = NULL;
 
   int secretHeight = 0, secretWidth = 0;
   long secretSize;
 
   int c;
-  while((c = getopt(argc, argv, "c:s:d:w:h:b:v:")) != -1) {
+  while((c = getopt(argc, argv, "c:s:d:w:h:b:g:v:")) != -1) {
     switch(c) {
     case 'c':
       image = optarg;
@@ -48,6 +52,9 @@ int main(int argc, char *argv[]){
       break;
     case 'b':
       toBinaryImage = optarg;
+      break;
+    case 'g':
+      toGrayImage = optarg;
       break;
     case 'v':
       visualImage = optarg;
@@ -185,13 +192,34 @@ int main(int argc, char *argv[]){
 
     getVisualSecrets(ramIntensity, width, height, first, second);
 
-    saveBMP("images/1.bmp", secretHeight, secretWidth, convertIntensityToBMP(first, secretWidth, secretHeight, &size));
-    saveBMP("images/2.bmp", secretHeight, secretWidth, convertIntensityToBMP(second, secretWidth, secretHeight, &size));
+    saveBMP(FILE_PATH_VC_FIRST, secretHeight, secretWidth, convertIntensityToBMP(first, secretWidth, secretHeight, &size));
+    saveBMP(FILE_PATH_VC_SECOND, secretHeight, secretWidth, convertIntensityToBMP(second, secretWidth, secretHeight, &size));
 
     delete[] buffer;
     delete[] ramIntensity;
     delete[] first;
     delete[] second;
+  } else if(toGrayImage != NULL){
+    int height, width;
+    long size;
+    ifstream file;
+
+    file.open(toGrayImage, ios::in | ios::binary);
+
+    BYTE* buffer = loadBMP(&height, &width, &size, file);
+    file.close();
+
+    if(buffer == NULL){
+        cout << "Error: buffer null, returned in LoadBMP()!" << endl;
+        return 1;
+    }
+    
+    BYTE* ramIntensity = convertBMPToIntensity(buffer, width, height);
+
+    saveBMP(FILE_PATH_GRAY, height, width, convertIntensityToBMP(ramIntensity, width, height, &size));
+
+    delete[] buffer;
+    delete[] ramIntensity;
   } else{
     usage(argv[0]);
     return 1;
@@ -208,6 +236,7 @@ void usage(const char *name){
     << "  -w secret image width (>0)" << endl
     << "  -h secret image height (>0)" << endl
     << "  -b convert input image to binary" << endl
+    << "  -g convert input image to gray level" << endl
     << "  -v visual crypto, give image path with this" << endl
     << "Examples:" << endl
     << " Crypte: -c image.bmp -s secret.bmp" << endl
