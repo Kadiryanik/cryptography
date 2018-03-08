@@ -47,10 +47,12 @@ int saveBMP(const char *filename, int width, int height, BYTE *data);
 BYTE* convertBMPToIntensity(BYTE* Buffer, int width, int height);
 BYTE* convertIntensityToBMP(BYTE* Buffer, int width, int height, long* newsize);
 
-void processTheByte(BYTE *start, BYTE secretByte);
-BYTE* decrypteTheSecret(BYTE* merged, int width, int height);
+void processTheByte(BYTE type, BYTE *start, BYTE secretByte);
+BYTE* decrypteTheSecret(BYTE type, BYTE* merged, int width, int height);
 
 int thresHold(const BYTE* const ramIntensity, int width, int height);
 void getVisualSecrets(const BYTE* const ramIntensity, int width, int height, BYTE* secretFirstImage, BYTE* secretSecondImage);
+
+double getPnsr(const BYTE* const first, const BYTE* const second, int width, int height);
 
 #endif

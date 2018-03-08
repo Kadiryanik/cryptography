@@ -16,6 +16,8 @@ using namespace std;
 #define FILE_PATH_VC_FIRST "images/1.bmp"
 #define FILE_PATH_VC_SECOND "images/2.bmp"
 
+#define HEADER_SIZE 3
+
 void usage(const char *);
 
 int main(int argc, char *argv[]){
@@ -29,12 +31,14 @@ int main(int argc, char *argv[]){
   const char* toBinaryImage = NULL;
   const char* visualImage = NULL;
   const char* toGrayImage = NULL;
-
+  
+  int forceTypeSet = 0;
+  int forceType = 0;
   int secretHeight = 0, secretWidth = 0;
   long secretSize;
 
   int c;
-  while((c = getopt(argc, argv, "c:s:d:w:h:b:g:v:")) != -1) {
+  while((c = getopt(argc, argv, "c:s:d:f:b:g:v:")) != -1) {
     switch(c) {
     case 'c':
       image = optarg;
@@ -44,11 +48,9 @@ int main(int argc, char *argv[]){
     case 'd':
       mergedImage = optarg;
       break;
-    case 'w':
-      secretWidth = atoi(optarg);
-      break;
-    case 'h':
-      secretHeight = atoi(optarg);
+    case 'f':
+      forceTypeSet = 1;
+      forceType = atoi(optarg);
       break;
     case 'b':
       toBinaryImage = optarg;
@@ -87,13 +89,36 @@ int main(int argc, char *argv[]){
 
     cout << "secretWidth: " << secretWidth << endl << "secretHeight: " << secretHeight << endl;
 
-    if(height * width / 8 < secretHeight * secretWidth){
+    BYTE type = 0;
+    if(forceTypeSet == 1 && (forceType == 5 || forceType == 7)){
+      type = forceType;
+      if(type == 7 && ((height * width) - HEADER_SIZE) / 9 < secretHeight * secretWidth){
+        cout << "Secret image too big for 7 base!" << endl;
+        return 1;
+      } else if(type == 5 && ((height * width) - HEADER_SIZE) / 8 < secretHeight * secretWidth){
+        cout << "Secret image too big for 5 base!" << endl;
+        return 1;
+      }
+    } else{
+      if(forceTypeSet == 1){
+        cout << "Unsupported type, use only 5 and 7." << endl;
+      }
+      if(((height * width) - HEADER_SIZE) / 9 > secretHeight * secretWidth){
+        cout << "Using 7 base." << endl;
+        type = 7;
+      } else if(((height * width) - HEADER_SIZE) / 8 > secretHeight * secretWidth){
+        cout << "Using 5 base." << endl;
+        type = 5;
+      } else{
         cout << "Secret image too big!" << endl;
         return 1;
+      }
     }
 
+    BYTE* originalRamIntensity = convertBMPToIntensity(buffer, width, height);
+
     BYTE* ramIntensity = convertBMPToIntensity(buffer, width, height);
-    if(ramIntensity == NULL){
+    if(ramIntensity == NULL || originalRamIntensity == NULL){
         cout << "Error: ramIntensity null, returned in convertBMPToIntensity()!" << endl;
         return 1;
     }
@@ -103,20 +128,32 @@ int main(int argc, char *argv[]){
         cout << "Error: secretRamIntensity null, returned in convertBMPToIntensity()!" << endl;
         return 1;
     }
-
-    // process all bytes
-    for(long i = 0; i < secretWidth * secretHeight; i++){
-        processTheByte(ramIntensity + (i * 8), *(secretRamIntensity + i));
+      
+    *ramIntensity = type;
+    *(ramIntensity + 1) = secretWidth;
+    *(ramIntensity + 2) = secretHeight;
+    if(type == 5){
+      // process all bytes
+      for(long i = 0; i < secretWidth * secretHeight; i++){
+          processTheByte(type, ramIntensity + 3 + (i * 8), *(secretRamIntensity + i));
+      }
+    } else if(type == 7){
+      // process all bytes
+      for(long i = 0; i < secretWidth * secretHeight; i++){
+          processTheByte(type, ramIntensity + 3 + (i * 9), *(secretRamIntensity + i));
+      }
     }
-
     saveBMP(FILE_PATH_MERGED, height, width, convertIntensityToBMP(ramIntensity, width, height, &size));
+
+    cout << "PNSR: " << getPnsr(ramIntensity, originalRamIntensity, width, height) << endl;
 
     delete[] secretBuffer;
     delete[] secretRamIntensity;
     
     delete[] buffer;
+    delete[] originalRamIntensity;
     delete[] ramIntensity;
-  } else if(mergedImage != NULL && secretWidth > 0 && secretHeight > 0){
+  } else if(mergedImage != NULL){
     file.open(mergedImage, ios::in | ios::binary);
 
     BYTE* buffer = loadBMP(&height, &width, &size, file);
@@ -132,7 +169,12 @@ int main(int argc, char *argv[]){
         return 1;
     }
 
-    BYTE* secret = decrypteTheSecret(ramIntensity, secretWidth, secretHeight);
+    BYTE type = *ramIntensity;
+    BYTE secretWidth = *(ramIntensity + 1);
+    BYTE secretHeight = *(ramIntensity + 2);
+
+    cout << (int)type << " base. " << (int)secretWidth << "x" << (int)secretHeight << endl;
+    BYTE* secret = decrypteTheSecret(type, ramIntensity + 3, secretWidth, secretHeight);
 
     long empty;
     saveBMP(FILE_PATH_SECRET, secretHeight, secretWidth, convertIntensityToBMP(secret, secretWidth, secretHeight, &empty));
@@ -233,14 +275,13 @@ void usage(const char *name){
   cout << "  -c use for crypte, give image path with this" << endl
     << "  -s secret image path" << endl
     << "  -d use for decrypte, give image path with this" << endl
-    << "  -w secret image width (>0)" << endl
-    << "  -h secret image height (>0)" << endl
+    << "  -f force for the using 5 or 7 base" << endl
     << "  -b convert input image to binary" << endl
     << "  -g convert input image to gray level" << endl
     << "  -v visual crypto, give image path with this" << endl
     << "Examples:" << endl
     << " Crypte: -c image.bmp -s secret.bmp" << endl
-    << " Decrypte: -d image.bmp -w 32 -h 32" << endl
+    << " Decrypte: -d image.bmp" << endl
     << " Binary: -b image.bmp" << endl
     << " VisualCrypte: -v image.bmp" << endl;
 }

@@ -221,87 +221,179 @@ BYTE* convertIntensityToBMP(BYTE* Buffer, int width, int height, long* newsize){
     return newbuf;
 }
 /*--------------------------------------------------------------------------------------*/
-static void setNewPixelValue(BYTE* pixelValueLeft, BYTE *pixelValueRight, uint8_t newValue){
-    // (a + 2b) mod 5
-    uint8_t mod = ((uint8_t)(*pixelValueLeft) + 2 * (uint8_t)(*pixelValueRight)) % 5;
-
-    if(mod == newValue){
-        return;
-    }
-
-    uint8_t left = (uint8_t)(*pixelValueLeft);
-    uint8_t right = (uint8_t)(*pixelValueRight);
-
-    if(mod > newValue){
-        if(newValue + 1 == mod){
-            (left == 0) ? (left += 4) : left--;
-        } else if(newValue + 2 == mod){
-            (right == 0) ? (right += 4) : right--;
-        } else if(newValue + 3 == mod){
-            (left < 3) ? (left += 2) : (left -= 3);
-        } else if(newValue + 4 == mod){
-            (right < 2) ? (right += 3) : right -= 2;
-        } else{
-            cout << "Something wrong!" << endl;
-        }
-    } else{
-        if(newValue == mod + 1){
-            (left < 255) ? (left += 1) : left -= 4;
-        } else if(newValue == mod + 2){
-            (right < 255) ? (right += 1) : right -= 4;
-        } else if(newValue == mod + 3){
-            (left < 253) ? (left += 3) : left -= 2;
-        } else if(newValue == mod + 4){
-            (right < 254) ? (right += 2) : right -= 3;
-        } else{
-            cout << "Something wrong!" << endl;
-        }
-    }
-
-    *pixelValueLeft = (BYTE)left;
-    *pixelValueRight = (BYTE)right;
-}
-/*--------------------------------------------------------------------------------------*/
-void processTheByte(BYTE* start, BYTE secretByte){
-    uint8_t bytesInFiveBase[4] = { 0 };
-    uint8_t theByte = (uint8_t)secretByte;
-
-    for(int i = 3; i >= 0; i--){
-        bytesInFiveBase[i] = theByte % 5;
-        theByte /= 5;
-    }
-
-    for(int i = 0; i < 8; i += 2){
-        setNewPixelValue(start + i, start + i + 1, bytesInFiveBase[i / 2]);
-    }
-}
-/*--------------------------------------------------------------------------------------*/
-static BYTE getPixelValue(BYTE* start){
-    uint8_t bytesInFiveBase[4] = { 0 };
-
-    for(int i = 0; i < 8; i += 2){
+static void setNewPixelValue(BYTE type, BYTE* pixelValueLeft, BYTE* pixelValueMiddle, BYTE *pixelValueRight, uint8_t newValue){
+    if(type == 5){
         // (a + 2b) mod 5
-        uint8_t mod = ((uint8_t)(*(start + i)) + 2 * (uint8_t)(*(start + i + 1))) % 5;
-        
-        bytesInFiveBase[i / 2] = mod;
-    }
+        uint8_t mod = ((uint8_t)(*pixelValueLeft) + 2 * (uint8_t)(*pixelValueRight)) % 5;
 
-    return (BYTE)(bytesInFiveBase[0] * 125 + bytesInFiveBase[1] * 25 +
-                  bytesInFiveBase[2] * 5 + bytesInFiveBase[3]);
+        if(mod == newValue){
+            return;
+        }
+
+        uint8_t left = (uint8_t)(*pixelValueLeft);
+        uint8_t right = (uint8_t)(*pixelValueRight);
+
+        if(mod > newValue){
+            if(newValue + 1 == mod){
+                (left == 0) ? (left += 4) : left--;
+            } else if(newValue + 2 == mod){
+                (right == 0) ? (right += 4) : right--;
+            } else if(newValue + 3 == mod){
+                (left < 3) ? (left += 2) : (left -= 3);
+            } else if(newValue + 4 == mod){
+                (right < 2) ? (right += 3) : right -= 2;
+            } else{
+                cout << "Something wrong!" << endl;
+            }
+        } else{
+            if(newValue == mod + 1){
+                (left < 255) ? (left += 1) : left -= 4;
+            } else if(newValue == mod + 2){
+                (right < 255) ? (right += 1) : right -= 4;
+            } else if(newValue == mod + 3){
+                (left < 253) ? (left += 3) : left -= 2;
+            } else if(newValue == mod + 4){
+                (right < 254) ? (right += 2) : right -= 3;
+            } else{
+                cout << "Something wrong!" << endl;
+            }
+        }
+
+        *pixelValueLeft = (BYTE)left;
+        *pixelValueRight = (BYTE)right;
+    } else if(type == 7){
+        // (a + 2b + 3c) mod 7
+        uint8_t mod = ((uint8_t)(*pixelValueLeft) + 2 * (uint8_t)(*pixelValueMiddle) + 3 * (uint8_t)(*pixelValueRight)) % 7;
+
+        if(mod == newValue){
+            return;
+        }
+
+        uint8_t left = (uint8_t)(*pixelValueLeft);
+        uint8_t middle = (uint8_t)(*pixelValueMiddle);
+        uint8_t right = (uint8_t)(*pixelValueRight);
+
+        if(mod > newValue){
+            if(newValue + 1 == mod){
+                (left == 0) ? (left += 6) : left--;
+            } else if(newValue + 2 == mod){
+                (middle == 0) ? ((left > 1) ? left -= 2 : left += 5) : middle--;
+            } else if(newValue + 3 == mod){
+                (right > 0) ? right-- : ((left > 2) ? left -= 3 : left += 4);
+            } else if(newValue + 4 == mod){
+                (middle < 2) ? ((left < 253) ? left += 3 : left -= 4) : middle -= 2;
+            } else if(newValue + 5 == mod){
+                (middle < 255) ? middle++ : ((left < 254) ? left += 2 : left -= 5);
+            } else if(newValue + 6 == mod){
+                (right > 1) ? right -= 2 : ((left < 255) ? left++ : left -= 6);
+            } else{
+                cout << "Something wrong!" << endl;
+            }
+        } else{
+            if(newValue == mod + 1){
+                (left < 255) ? left++ : left -= 6;
+            } else if(newValue == mod + 2){
+                (middle < 255) ? middle++ : ((left < 254) ? left += 2 : left -= 5);
+            } else if(newValue == mod + 3){
+                (right < 255) ? right++ : ((left < 253) ? left += 3 : left -= 4);
+            } else if(newValue == mod + 4){
+                (right > 0) ? right-- : ((left > 2) ? left -= 3 : left += 4);
+            } else if(newValue == mod + 5){
+                (middle > 0) ? middle-- : ((left > 1) ? left -= 2 : left += 5);
+            } else if(newValue == mod + 6){
+                (right < 254) ? right += 2 : ((left > 0) ? left-- : left += 6);
+            } else{
+                cout << "Something wrong!" << endl;
+            }
+        }
+
+        *pixelValueLeft = (BYTE)left;
+        *pixelValueMiddle = (BYTE)middle;
+        *pixelValueRight = (BYTE)right;
+    }
 }
 /*--------------------------------------------------------------------------------------*/
-BYTE* decrypteTheSecret(BYTE* merged, int width, int height){
-    BYTE* secret = new BYTE[width * height];
-    int merged_offset = 0;
+void processTheByte(BYTE type, BYTE* start, BYTE secretByte){
+    if(type == 5){
+        uint8_t bytesInFiveBase[4] = { 0 };
+        uint8_t theByte = (uint8_t)secretByte;
 
-    for(int i = 0; i < height; i++){
-        for(int j = 0; j < width; j++){
-            secret[i * width + j] = getPixelValue(merged + merged_offset);
-            merged_offset += 8;
+        for(int i = 3; i >= 0; i--){
+            bytesInFiveBase[i] = theByte % 5;
+            theByte /= 5;
+        }
+
+        for(int i = 0; i < 8; i += 2){
+            setNewPixelValue(type, start + i, NULL, start + i + 1, bytesInFiveBase[i / 2]);
+        }
+    } else if(type == 7){
+        uint8_t bytesInSevenBase[3] = { 0 };
+        uint8_t theByte = (uint8_t)secretByte;
+
+        for(int i = 2; i >= 0; i--){
+            bytesInSevenBase[i] = theByte % 7;
+            theByte /= 7;
+        }
+
+        for(int i = 0; i < 9; i += 3){
+            setNewPixelValue(type, start + i, start + i + 1, start + i + 2, bytesInSevenBase[i / 3]);
         }
     }
+}
+/*--------------------------------------------------------------------------------------*/
+static BYTE getPixelValue(BYTE type, BYTE* start){
+    if(type == 5){
+        uint8_t bytesInFiveBase[4] = { 0 };
 
-    return secret;
+        for(int i = 0; i < 8; i += 2){
+            // (a + 2b) mod 5
+            uint8_t mod = ((uint8_t)(*(start + i)) + 2 * (uint8_t)(*(start + i + 1))) % 5;
+            
+            bytesInFiveBase[i / 2] = mod;
+        }
+
+        return (BYTE)(bytesInFiveBase[0] * 125 + bytesInFiveBase[1] * 25 +
+                      bytesInFiveBase[2] * 5 + bytesInFiveBase[3]);
+    } else if(type == 7){
+        uint8_t bytesInSevenBase[3] = { 0 };
+
+        for(int i = 0; i < 9; i += 3){
+            // (a + 2b) mod 5
+            uint8_t mod = ((uint8_t)(*(start + i)) + 2 * (uint8_t)(*(start + i + 1)) + 3 * (uint8_t)(*(start + i + 2))) % 7;
+            
+            bytesInSevenBase[i / 3] = mod;
+        }
+
+        return (BYTE)(bytesInSevenBase[0] * 49 + bytesInSevenBase[1] * 7 + bytesInSevenBase[2]);
+    }
+}
+/*--------------------------------------------------------------------------------------*/
+BYTE* decrypteTheSecret(BYTE type, BYTE* merged, int width, int height){
+    if(type == 5){
+        BYTE* secret = new BYTE[width * height];
+        int merged_offset = 0;
+
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width; j++){
+                secret[i * width + j] = getPixelValue(type, merged + merged_offset);
+                merged_offset += 8;
+            }
+        }
+
+        return secret;
+    } else if(type == 7){
+        BYTE* secret = new BYTE[width * height];
+        int merged_offset = 0;
+
+        for(int i = 0; i < height; i++){
+            for(int j = 0; j < width; j++){
+                secret[i * width + j] = getPixelValue(type, merged + merged_offset);
+                merged_offset += 9;
+            }
+        }
+
+        return secret;
+    }
 }
 /*--------------------------------------------------------------------------------------*/
 int thresHold(const BYTE* const ramIntensity, int width, int height){
@@ -375,7 +467,6 @@ void getVisualSecrets(const BYTE* const ramIntensity, int width, int height, BYT
     gray_masks[8] = 255; gray_masks[9] = 0; gray_masks[10] = 255; gray_masks[11] = 0;
     gray_masks[12] = 255; gray_masks[13] = 255; gray_masks[14] = 0; gray_masks[15] = 0;
     gray_masks[16] = 0; gray_masks[17] = 0; gray_masks[18] = 255; gray_masks[19] = 255;
-    
 
     for(int i = 0, row = 0; i < height; i++, row += 2){
         for(int j = 0, column = 0; j < width; j++, column += 2){
@@ -404,4 +495,22 @@ void getVisualSecrets(const BYTE* const ramIntensity, int width, int height, BYT
             }
         }
     }
+}
+/*--------------------------------------------------------------------------------------*/
+double getPnsr(const BYTE* const first, const BYTE* const second, int width, int height){
+    double sum = 0;
+
+    for(int i = 0; i < height; i++){
+        for(int j = 0; j < width; j++){
+            BYTE firstPixelValue = *(first + i * width + j);
+            BYTE secondPixelValue = *(second + i * width + j);
+
+            if(firstPixelValue != secondPixelValue){
+                sum += pow((int)(firstPixelValue - secondPixelValue), 2);
+            }
+        }
+    }
+    sum /= (width * height);
+
+    return 20 * log10(255.0 / sqrt(sum));
 }
