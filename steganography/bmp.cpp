@@ -275,33 +275,33 @@ static void setNewPixelValue(BYTE type, BYTE* pixelValueLeft, BYTE* pixelValueMi
 
         if(mod > newValue){
             if(newValue + 1 == mod){
-                (left == 0) ? (left += 6) : left--;
+                (left == 0) ? ((right < 254) ? right += 2 : ((middle < 253) ? middle += 3 : left += 6)) : left--;
             } else if(newValue + 2 == mod){
                 (middle == 0) ? ((left > 1) ? left -= 2 : left += 5) : middle--;
             } else if(newValue + 3 == mod){
-                (right > 0) ? right-- : ((left > 2) ? left -= 3 : left += 4);
+                (right > 0) ? right-- : ((middle < 254) ? middle += 2 : ((left > 2) ? left -= 3 : left += 4));
             } else if(newValue + 4 == mod){
-                (middle < 2) ? ((left < 253) ? left += 3 : left -= 4) : middle -= 2;
+                (middle < 2) ? ((right < 255) ? right++ : ((left < 253) ? left += 3 : left -= 4)) : middle -= 2;
             } else if(newValue + 5 == mod){
                 (middle < 255) ? middle++ : ((left < 254) ? left += 2 : left -= 5);
             } else if(newValue + 6 == mod){
-                (right > 1) ? right -= 2 : ((left < 255) ? left++ : left -= 6);
+                (left < 255) ? left++ : ((right > 1) ? right -= 2 : ((middle > 2) ? middle -= 3 : left -= 6));
             } else{
                 cout << "Something wrong!" << endl;
             }
         } else{
             if(newValue == mod + 1){
-                (left < 255) ? left++ : left -= 6;
+                (left < 255) ? left++ : ((right > 1) ? right -= 2 : ((middle > 2) ? middle -= 3: left -= 6));
             } else if(newValue == mod + 2){
                 (middle < 255) ? middle++ : ((left < 254) ? left += 2 : left -= 5);
             } else if(newValue == mod + 3){
-                (right < 255) ? right++ : ((left < 253) ? left += 3 : left -= 4);
+                (right < 255) ? right++ : ((middle > 1) ? middle -= 2 : ((left < 253) ? left += 3 : left -= 4));
             } else if(newValue == mod + 4){
-                (right > 0) ? right-- : ((left > 2) ? left -= 3 : left += 4);
+                (right > 0) ? right-- : ((middle < 254) ? middle += 2 : ((left > 2) ? left -= 3 : left += 4));
             } else if(newValue == mod + 5){
                 (middle > 0) ? middle-- : ((left > 1) ? left -= 2 : left += 5);
             } else if(newValue == mod + 6){
-                (right < 254) ? right += 2 : ((left > 0) ? left-- : left += 6);
+                (right < 254) ? right += 2 : ((middle < 253) ? middle += 3 : ((left > 0) ? left-- : left += 6));
             } else{
                 cout << "Something wrong!" << endl;
             }
