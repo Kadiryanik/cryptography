@@ -10,7 +10,7 @@
 
 using namespace std;
 
-#define DEBUG 1
+#define DEBUG 0
 #define LOAD_ANYWAY 0
 
 #if DEBUG
@@ -497,7 +497,7 @@ void getVisualSecrets(const BYTE* const ramIntensity, int width, int height, BYT
     }
 }
 /*--------------------------------------------------------------------------------------*/
-double getPnsr(const BYTE* const first, const BYTE* const second, int width, int height){
+double getPsnr(const BYTE* const first, const BYTE* const second, int width, int height){
     double sum = 0;
 
     for(int i = 0; i < height; i++){

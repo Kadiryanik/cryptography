@@ -53,6 +53,6 @@ BYTE* decrypteTheSecret(BYTE type, BYTE* merged, int width, int height);
 int thresHold(const BYTE* const ramIntensity, int width, int height);
 void getVisualSecrets(const BYTE* const ramIntensity, int width, int height, BYTE* secretFirstImage, BYTE* secretSecondImage);
 
-double getPnsr(const BYTE* const first, const BYTE* const second, int width, int height);
+double getPsnr(const BYTE* const first, const BYTE* const second, int width, int height);
 
 #endif

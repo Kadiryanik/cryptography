@@ -145,7 +145,7 @@ int main(int argc, char *argv[]){
     }
     saveBMP(FILE_PATH_MERGED, height, width, convertIntensityToBMP(ramIntensity, width, height, &size));
 
-    cout << "PNSR: " << getPnsr(ramIntensity, originalRamIntensity, width, height) << endl;
+    cout << "PSNR: " << getPsnr(ramIntensity, originalRamIntensity, width, height) << endl;
 
     delete[] secretBuffer;
     delete[] secretRamIntensity;
@@ -272,16 +272,16 @@ int main(int argc, char *argv[]){
 
 void usage(const char *name){
   cout << "Usage: " << name << " [-c <*.bmp>] [-s <*.bmp>] [-d <*.bmp>] [-w <secret width>] [-h <secret height>]" << endl;
-  cout << "  -c use for crypte, give image path with this" << endl
+  cout << "  -c use for cover, give image path with this" << endl
     << "  -s secret image path" << endl
-    << "  -d use for decrypte, give image path with this" << endl
+    << "  -d use for decover, give image path with this" << endl
     << "  -f force for the using 5 or 7 base" << endl
     << "  -b convert input image to binary" << endl
     << "  -g convert input image to gray level" << endl
     << "  -v visual crypto, give image path with this" << endl
     << "Examples:" << endl
-    << " Crypte: -c image.bmp -s secret.bmp" << endl
-    << " Decrypte: -d image.bmp" << endl
+    << " Cover: -c image.bmp -s secret.bmp" << endl
+    << " Decover: -d image.bmp" << endl
     << " Binary: -b image.bmp" << endl
-    << " VisualCrypte: -v image.bmp" << endl;
+    << " VisualCrypte: -v binary.bmp (binary images only)" << endl;
 }
